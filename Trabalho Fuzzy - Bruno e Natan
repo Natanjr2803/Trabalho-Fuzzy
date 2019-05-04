@@ -1,0 +1,100 @@
+(defglobal
+?*g_resultado* = 0
+)
+
+(deftemplate chuva
+1 50 mmporhora
+ ((pouco (z 1 5))
+  (medio (5 0) (10 1) (20 1) (25 0))
+  (alto (s 25 50))
+ )
+)
+
+(deftemplate rio
+0 12 metros
+ ((baixo (z 0 3))
+  (medio (3 0)(5 1)(7 0))
+  (alto (s 6 7))
+ )
+)
+(deftemplate enchente
+0 100 probabilidade
+   ((muitobaixo (z 0 10))
+   (baixo (0 0)(10 1)(30 0))
+   (medio (25 0)(40 1)(50 0))
+   (alto (45 0)(70 1)(75 0))
+   (muitoalto (s 75 99))
+  )
+)
+(defrule muito_baixa
+  (declare (salience 10))
+  (chuva pouco)
+  (rio baixo)
+  
+=>
+  (assert (enchente muitobaixo))
+)
+
+
+(defrule baixo
+  (declare (salience 10))
+ (or (and (rio medio) (chuva pouco))
+     (and (rio baixo) (chuva medio))
+)
+=>
+  (assert (enchente baixo))
+)
+(defrule normal
+(declare (salience 10))
+ (or (and (rio alto) (chuva pouco))
+     (and (rio medio) (chuva medio))
+     (and (rio baixo) (chuva alto))
+   )
+=>
+  (assert (enchente medio))
+) 
+
+(defrule alto
+ (declare (salience 10))
+ (or (and (chuva medio) (rio alto))
+     (and (chuva alto) (rio medio)) 
+)
+=>
+  (assert (enchente alto))
+)
+(defrule muito_alto
+  (declare (salience 10))
+  (chuva  alto)
+  (rio alto)
+  
+=>
+  (assert (enchente  muitoalto))
+)
+
+(defrule defuzifica
+  (declare (salience 0))
+  ?v_tmp <- (enchente ?)
+=>
+  (bind ?*g_resultado* (moment-defuzzify ?v_tmp))
+  (plot-fuzzy-value t "*" nil nil ?v_tmp)
+  (retract ?v_tmp)
+  (printout t "Probabilidade de enchente : ")
+  ;(printout t ?v_tmp)
+  (printout t ?*g_resultado* crlf)
+  (printout t " >>> Término <<< " crlf)
+)
+(deffacts teste
+  (chuva alto)
+  (rio medio)
+)
+;(
+;  (deffacts teste
+;  (chuva pouco)
+;  (rio alto)
+;)
+
+
+
+
+
+
